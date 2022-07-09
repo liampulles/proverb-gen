@@ -1,0 +1,24 @@
+run:
+  # Don't run on tests (tests don't need to have same level of quality)
+  tests: false
+
+linters:
+  enable-all: true
+  disable:
+    # Disable deprecated
+    - scopelint
+    - maligned
+    - golint
+    - interfacer
+    # Don't care about using fmt
+    - forbidigo
+    # Don't care about TODOs
+    - godox
+    # gofmt is fine
+    - gofumpt
+    # Existing linters do enough to worry about cuddling for return
+    - nlreturn
+    # Doesn't seem to work very well at present
+    - structcheck
+    # Don't care about parallel tests
+    - paralleltest
