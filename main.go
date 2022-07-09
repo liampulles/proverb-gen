@@ -12,5 +12,5 @@ func main() {
 		panic(err)
 	}
 
-	os.Exit(wire.Run(wd))
+	os.Exit(wire.Run(wd, os.Args))
 }
