@@ -9,9 +9,9 @@ import (
 	"github.com/liampulles/proverb-gen/internal/usecase"
 )
 
-func Run(wd string, args []string) int {
+func Run(wd string) int {
 	engine := wire()
-	if err := engine.Run(wd, args); err != nil {
+	if err := engine.Run(wd); err != nil {
 		fmt.Fprintf(os.Stderr, "ERROR: %s\n", err.Error())
 		return 1
 	}

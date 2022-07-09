@@ -1,21 +1,20 @@
 package cli
 
 import (
-	"flag"
 	"fmt"
+	"io/fs"
 	"os"
-	"path"
-	"strings"
+	"path/filepath"
 
 	"github.com/liampulles/proverb-gen/internal/adapter"
 )
 
-const templateFileName = "_proverb_template.md"
+const proverbsRelDir = "_proverbs"
 
 // --- Engine front-matter ---
 
 type Engine interface {
-	Run(wd string, args []string) error
+	Run(wd string) error
 }
 
 type EngineImpl struct {
@@ -32,15 +31,13 @@ func NewEngineImpl(gateway adapter.Gateway) *EngineImpl {
 	}
 }
 
-func (e *EngineImpl) Run(wd string, args []string) error {
-	tmplPath := path.Join(wd, templateFileName)
-
-	options, err := parseFlags(args)
+func (e *EngineImpl) Run(wd string) error {
+	snippetPaths, err := e.readSnippetPaths(wd)
 	if err != nil {
 		return err
 	}
 
-	mdBytes, err := e.gateway.InitMarkdown(tmplPath, options.Title, options.Tags)
+	mdBytes, err := e.gateway.GenMarkdown(wd, snippetPaths)
 	if err != nil {
 		return fmt.Errorf("adapter error: %w", err)
 	}
@@ -51,24 +48,26 @@ func (e *EngineImpl) Run(wd string, args []string) error {
 	return nil
 }
 
-type options struct {
-	Title string
-	Tags  []string
-}
+func (e *EngineImpl) readSnippetPaths(wd string) ([]string, error) {
+	proverbsDir := filepath.Join(wd, proverbsRelDir)
 
-func parseFlags(args []string) (options, error) {
-	// Define and run the flag set.
-	flagSet := flag.NewFlagSet("proverb-gen", flag.ContinueOnError)
-	titlePtr := flagSet.String("title", "Some Title", "Title for the proverb")
-	tagsPtr := flagSet.String("tags", "general,code-design", "Tags associated with the proverb, comma separated.")
-	if err := flagSet.Parse(args[1:]); err != nil {
-		return options{}, err
+	var snippetPaths []string
+	if err := filepath.WalkDir(proverbsDir, func(path string, d fs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+
+		if d.IsDir() {
+			return nil
+		}
+
+		if filepath.Ext(path) == ".html" {
+			snippetPaths = append(snippetPaths, path)
+		}
+
+		return nil
+	}); err != nil {
+		return nil, fmt.Errorf("walk error in %s: %w", wd, err)
 	}
-
-	tags := strings.Split(*tagsPtr, ",")
-
-	return options{
-		Title: *titlePtr,
-		Tags:  tags,
-	}, nil
+	return snippetPaths, nil
 }
