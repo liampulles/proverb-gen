@@ -27,11 +27,6 @@ shareable: true
 		<section>
 			<h3>{{ .Title }}</h3>
 			{{ .HTML }}
-			<ul class="proverb-tags">
-				{{ range .Tags }}
-				<li class="proverb-tag">#{{ . }}</li>
-				{{ end }}
-			</ul>
 		</section>
 		{{ end }}
 	</section>
