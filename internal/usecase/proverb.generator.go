@@ -13,13 +13,9 @@ shareable: true
 ---
 <article>
     <hr>
-	<header>
-		<h1>Proverbs</h1>
-	</header>
-	<section>
-		<p>Over the years I discover small pieces of cogent advice about programming and being a developer that I find useful.</p> 
-		<p>This page tries to collect those thoughts - for my benefit and perhaps others. Email me if you have something good, I'll consider adding it. ;)</p>
-	</section>
+	<h1>Proverbs</h1>
+	<p>Over the years I discover small pieces of cogent advice about programming and being a developer that I find useful.</p> 
+	<p>This page tries to collect those thoughts - for my benefit and perhaps others. Email me if you have something good, I'll consider adding it. ;)</p>
 	{{ range $group, $snippets := . }}
 	<section>
 		<h2>{{ $group }}</h2>
