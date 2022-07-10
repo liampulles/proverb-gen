@@ -22,6 +22,14 @@ shareable: true
 		{{ range $snippets }}
 		<section>
 			<h3>{{ .Title }}</h3>
+			{{ if .ImageRelPath }}
+			<aside>
+				<figure>
+					<img src="{{ .ImageRelPath }}">
+					{{ if .ImageText }}<figcaption><i>{{ .ImageText }}</i></figcaption>{{ end }}
+				</figure>
+			</aside>
+			{{ end }}
 			{{ .HTML }}
 		</section>
 		{{ end }}
@@ -34,10 +42,12 @@ var proverbsTemplate = template.Must(template.New("proverbs").Parse(proverbsTemp
 // --- ProverbGenerator front-matter ---
 
 type Snippet struct {
-	Title string
-	Group string
-	Tags  []string
-	HTML  template.HTML
+	Title        string
+	Group        string
+	Tags         []string
+	HTML         template.HTML
+	ImageRelPath template.URL
+	ImageText    string
 }
 
 type ProverbGenerator interface {

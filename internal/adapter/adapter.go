@@ -13,7 +13,7 @@ import (
 // --- Gateway front-matter ---
 
 type Gateway interface {
-	GenMarkdown(wd string, snippetPaths []string) ([]byte, error)
+	GenMarkdown(wd string, snippetPaths []string, imagePaths []string) ([]byte, error)
 }
 
 type GatewayImpl struct {
@@ -30,8 +30,13 @@ func NewGatewayImpl(proverbGenerator usecase.ProverbGenerator) *GatewayImpl {
 	}
 }
 
-func (g *GatewayImpl) GenMarkdown(wd string, snippetPaths []string) ([]byte, error) {
-	snippets, err := g.parseFiles(wd, snippetPaths)
+func (g *GatewayImpl) GenMarkdown(wd string, snippetPaths []string, imagePaths []string) ([]byte, error) {
+	imageMap, err := g.parseImageFiles(wd, imagePaths)
+	if err != nil {
+		return nil, err
+	}
+
+	snippets, err := g.parseSnippetFiles(wd, snippetPaths, imageMap)
 	if err != nil {
 		return nil, err
 	}
@@ -43,10 +48,10 @@ func (g *GatewayImpl) GenMarkdown(wd string, snippetPaths []string) ([]byte, err
 	return mdBytes, nil
 }
 
-func (g *GatewayImpl) parseFiles(wd string, snippetPaths []string) ([]usecase.Snippet, error) {
+func (g *GatewayImpl) parseSnippetFiles(wd string, snippetPaths []string, imageMap map[string]imageInfo) ([]usecase.Snippet, error) {
 	snippets := make([]usecase.Snippet, len(snippetPaths))
 	for i, snippetPath := range snippetPaths {
-		snippet, err := g.parseFile(wd, snippetPath)
+		snippet, err := g.parseSnippetFile(wd, snippetPath, imageMap)
 		if err != nil {
 			return nil, err
 		}
@@ -55,7 +60,7 @@ func (g *GatewayImpl) parseFiles(wd string, snippetPaths []string) ([]usecase.Sn
 	return snippets, nil
 }
 
-func (g *GatewayImpl) parseFile(wd string, snippetPath string) (usecase.Snippet, error) {
+func (g *GatewayImpl) parseSnippetFile(wd string, snippetPath string, imageMap map[string]imageInfo) (usecase.Snippet, error) {
 	htmlBytes, err := os.ReadFile(snippetPath)
 	if err != nil {
 		return usecase.Snippet{}, fmt.Errorf("could not read %s: %w", snippetPath, err)
@@ -82,10 +87,54 @@ func (g *GatewayImpl) parseFile(wd string, snippetPath string) (usecase.Snippet,
 		tags = strings.Split(tagsStr, ",")
 	}
 
+	// If it doesn't exist, it will be empty - which works.
+	imageInfo := imageMap[title]
+
 	return usecase.Snippet{
-		Title: title,
-		Group: group,
-		Tags:  tags,
-		HTML:  template.HTML(htmlBytes),
+		Title:        title,
+		Group:        group,
+		Tags:         tags,
+		HTML:         template.HTML(htmlBytes),
+		ImageRelPath: template.URL(imageInfo.RelPath),
+		ImageText:    imageInfo.Text,
+	}, nil
+}
+
+type imageInfo struct {
+	RelPath string
+	Text    string
+}
+
+func (g *GatewayImpl) parseImageFiles(wd string, imagePaths []string) (map[string]imageInfo, error) {
+	imageMap := make(map[string]imageInfo)
+	for _, imagePath := range imagePaths {
+		name, info, err := g.parseImageFile(wd, imagePath)
+		if err != nil {
+			return nil, err
+		}
+		imageMap[name] = info
+	}
+	return imageMap, nil
+}
+
+func (g *GatewayImpl) parseImageFile(wd string, imagePath string) (string, imageInfo, error) {
+	relPath, err := filepath.Rel(wd, imagePath)
+	if err != nil {
+		return "", imageInfo{}, fmt.Errorf("error determining %s relative to %s: %w", imagePath, wd, err)
+	}
+
+	base := filepath.Base(imagePath)
+	fullName := strings.TrimSuffix(base, filepath.Ext(base))
+
+	segs := strings.Split(fullName, "|")
+	name := segs[0]
+	var text string
+	if len(segs) > 1 {
+		text = segs[1]
+	}
+
+	return name, imageInfo{
+		RelPath: relPath,
+		Text:    text,
 	}, nil
 }
