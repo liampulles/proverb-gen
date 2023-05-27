@@ -23,7 +23,7 @@ shareable: true
 		<section>
 			<h3>{{ .Title }}</h3>
 			{{ if .ImageRelPath }}
-			<aside>
+			<aside class="optional">
 				<figure>
 					<img src="{{ .ImageRelPath }}">
 					{{ if .ImageText }}<figcaption><i>{{ .ImageText }}</i></figcaption>{{ end }}
